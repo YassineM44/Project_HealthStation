@@ -1,0 +1,19 @@
+{
+  "C_Cpp.intelliSenseEngine": "default",
+  "idf.openOcdConfigs": [
+    "board/esp32-wrover-kit-3.3v.cfg"
+  ],
+  "idf.currentSetup": "C:\\Users\\Yassine El Gares\\esp\\v5.2.6\\esp-idf",
+  "idf.customExtraVars": {
+    "IDF_TARGET": "esp32"
+  },
+  "idf.portWin": "COM3",
+  "clangd.path": "c:\\ESP\\tools\\esp-clang\\16.0.1-fe4f10a809\\esp-clang\\bin\\clangd.exe",
+  "clangd.arguments": [
+    "--background-index",
+    "--query-driver=**",
+    "--compile-commands-dir=c:\\Users\\Yassine El Gares\\health_station\\health station non merged\\health_station_merged\\health_station_merged\\build"
+  ],
+  "idf.flashType": "UART",
+  "idf.monitorPort": "COM3"
+}
