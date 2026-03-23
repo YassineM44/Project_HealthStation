@@ -19,3 +19,36 @@ SDA --> GPIO 21
 Vcc --> 3.3v
 GND --> GND
 ==============================================================
+===============HX711 (Weight Sensor)=========================
+2 possible setups (3v3 or 5v)
+
+1-3v3:
+
+DT --> GPIO 4
+SCK --> GPOIO 5
+Vcc --> 3.3v
+GND --> GND
+
+2-5v:
+
+Power bank 5V ----------------> breadboard red rail => common 5v
+Power bank GND ---------------> breadboard blue rail => common GND
+
+ESP32 GND --------------------> breadboard blue rail
+
+HX711 VCC --------------------> breadboard red rail
+HX711 GND --------------------> breadboard blue rail
+
+HX711 SCK --------------------> ESP32 D5
+
+HX711 DT ---- row x
+              |
+            [10k]
+              |
+           row Y -----------------> ESP32 D4
+              |
+            [20k]
+              |
+      breadboard blue GND rail
+      
+=======================================================================
