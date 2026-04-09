@@ -1,5 +1,3 @@
-idf_component_register(
-    SRCS "main.c"
-    INCLUDE_DIRS "."
-    REQUIRES health_station_sensors
-)
+idf_component_register(SRCS "main.c"
+                    INCLUDE_DIRS "."
+                    REQUIRES AD8232 HX711 MAX30102 infraredtemp esp_timer)

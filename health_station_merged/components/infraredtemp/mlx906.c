@@ -1,6 +1,6 @@
 #include "mlx906.h"
 #include "driver/gpio.h"
-#include "driver/i2c_master.h"
+#include "driver/i2c.h"
 #include "esp_log.h"
 #include <stdbool.h>
 
@@ -13,7 +13,7 @@
 #endif
 
 #ifndef MLX906_I2C_PORT
-#define MLX906_I2C_PORT I2C_NUM_0
+#define MLX906_I2C_PORT I2C_NUM_1
 #endif
 
 #ifndef MLX906_ADDR
@@ -30,8 +30,6 @@
 
 static const char *TAG = "mlx906";
 
-static i2c_master_bus_handle_t s_bus_handle;
-static i2c_master_dev_handle_t s_dev_handle;
 static bool s_inited;
 static esp_err_t s_last_err;
 
@@ -49,36 +47,30 @@ esp_err_t mlx906_init(void)
         return ESP_ERR_INVALID_ARG;
     }
 
-    i2c_master_bus_config_t bus_cfg = {
-        .i2c_port = MLX906_I2C_PORT,
+    i2c_config_t conf = {
+        .mode = I2C_MODE_MASTER,
         .sda_io_num = MLX906_SDA_PIN,
         .scl_io_num = MLX906_SCL_PIN,
-        .clk_source = I2C_CLK_SRC_DEFAULT,
-        .glitch_ignore_cnt = 7,
-        .flags.enable_internal_pullup = true,
+        .sda_pullup_en = GPIO_PULLUP_ENABLE,
+        .scl_pullup_en = GPIO_PULLUP_ENABLE,
+        .master.clk_speed = MLX906_I2C_FREQ_HZ,
     };
 
-    esp_err_t ret = i2c_new_master_bus(&bus_cfg, &s_bus_handle);
+    esp_err_t ret = i2c_param_config(MLX906_I2C_PORT, &conf);
     if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "i2c_param_config failed: %s", esp_err_to_name(ret));
         return ret;
     }
 
-    i2c_device_config_t dev_cfg = {
-        .dev_addr_length = I2C_ADDR_BIT_LEN_7,
-        .device_address = MLX906_ADDR,
-        .scl_speed_hz = MLX906_I2C_FREQ_HZ,
-    };
-
-    ret = i2c_master_bus_add_device(s_bus_handle, &dev_cfg, &s_dev_handle);
-    if (ret != ESP_OK) {
-        i2c_del_master_bus(s_bus_handle);
-        s_bus_handle = NULL;
+    ret = i2c_driver_install(MLX906_I2C_PORT, conf.mode, 0, 0, 0);
+    if (ret != ESP_OK && ret != ESP_ERR_INVALID_STATE) {
+        ESP_LOGE(TAG, "i2c_driver_install failed: %s", esp_err_to_name(ret));
         return ret;
     }
 
     s_inited = true;
-    ESP_LOGI(TAG, "init ok (SDA=%d SCL=%d addr=0x%02X freq=%dHz)",
-             MLX906_SDA_PIN, MLX906_SCL_PIN, MLX906_ADDR, MLX906_I2C_FREQ_HZ);
+    ESP_LOGI(TAG, "init ok (SDA=%d SCL=%d addr=0x%02X freq=%dHz port=%d)",
+             MLX906_SDA_PIN, MLX906_SCL_PIN, MLX906_ADDR, MLX906_I2C_FREQ_HZ, MLX906_I2C_PORT);
     return ESP_OK;
 }
 
@@ -92,13 +84,14 @@ static esp_err_t mlx906_read_reg(uint8_t reg, float *temp)
     }
 
     uint8_t data[3] = {0};
-    esp_err_t ret = i2c_master_transmit_receive(
-        s_dev_handle,
+    esp_err_t ret = i2c_master_write_read_device(
+        MLX906_I2C_PORT,
+        MLX906_ADDR,
         &reg,
         1,
         data,
         sizeof(data),
-        MLX906_TIMEOUT_MS
+        pdMS_TO_TICKS(MLX906_TIMEOUT_MS)
     );
     if (ret != ESP_OK) {
         if (ret != s_last_err) {
